@@ -3,16 +3,35 @@ version: "1.0"
 about: beer 命令行工具
 author: guzb
 
-args:
-  - merge-service-list:
-      help: 合并镜像列表提供给Jenkins使用
-      short: msl
-      takes_value: true
-      multiple: true
 subcommands:
-  - test:
-      about: does testing things
+  - merge:
+      about: 合并镜像列表提供给Jenkins使用
       args:
-        - list:
-            help: lists test values
-            short: l
+        - image-version-list:
+            help: 提供多个镜像版本定义 格式为【开标】fas-biz-open-paas:1.0.0-3f6672c-20230511092336
+            short: v
+            long: image-version-list
+            required: true
+            takes_value: true
+            multiple: true
+
+  - deploy:
+      about: 合并镜像列表，并且触发Jenkins的更新
+      args:
+        - image-version-list:
+            help: 提供多个镜像版本定义 格式为【开标】fas-biz-open-paas:1.0.0-3f6672c-20230511092336
+            short: v
+            long: image-version-list
+            required: true
+            takes_value: true
+            multiple: true
+        - url:
+            help: 定义Jenkins的Job地址
+            required: true
+            takes_value: true
+            long: url
+        - jtoken:
+            help: 定义Jenkins的Token值，例如11529c11a09a8df06bf943397a8ae5ea25
+            required: true
+            takes_value: true
+            long: jtoken
