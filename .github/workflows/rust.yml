@@ -30,6 +30,9 @@ jobs:
       - name: openssl-init
         run: sudo apt-get install libssl-dev
       
+      - name: Set OpenSSL directory
+        run: export OPENSSL_DIR=/usr/include/openssl
+      
       - name: cross-build
         run: cargo build --release --target x86_64-unknown-linux-musl
       
