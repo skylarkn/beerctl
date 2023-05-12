@@ -5,6 +5,9 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
 use tokio;
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
 
 #[tokio::main]
 async fn main() {
@@ -27,25 +30,81 @@ async fn main() {
 }
 
 fn handle_merge_subcommand(subcommand: &clap::ArgMatches) {
+
+    // 检查 file 和 version 参数是否至少传递一个
+    if !subcommand.is_present("file-path") && !subcommand.is_present("image-version-list") {
+        println!("-v、-f，至少传递一个参数用于获取镜像列表");
+        // 在此可以执行相应的错误处理逻辑
+        return;
+    }
+
     if let Some(values) = subcommand.values_of("image-version-list") {
         println!("本次需要处理服务{}个，正在合并服务列表... \n", values.len());
-        let merged_list = merge_service_list(values.collect::<Vec<_>>());
-        print_merged_list(&merged_list);
+        merge_service_list(values.map(|s| s.to_string()).collect());
+    }
+
+    if let Some(file_path) = subcommand.value_of("file-path") {
+        // 打开文件并读取内容
+        if let Ok(lines) = read_lines(file_path) {
+            // 将文件内容转换为字符串列表
+            let content: Vec<String> = lines
+                .filter_map(|line| line.ok())
+                .collect();
+
+            println!("本次需要处理服务{}个，正在合并服务列表... \n", content.len());
+            merge_service_list(content);
+        }
     }
 }
 
+// 读取文件并返回一个行迭代器
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+    where
+        P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
 async fn handle_deploy_subcommand(subcommand: &clap::ArgMatches<'_>) {
+
+    // 检查 file 和 version 参数是否至少传递一个
+    if !subcommand.is_present("file-path") && !subcommand.is_present("image-version-list") {
+        println!("-v、-f，至少传递一个参数用于获取镜像列表");
+        // 在此可以执行相应的错误处理逻辑
+        return;
+    }
+
     if let Some(values) = subcommand.values_of("image-version-list") {
         println!("本次需要处理服务{}个，正在合并服务列表... \n", values.len());
-        let merged_list = merge_service_list(values.collect::<Vec<_>>());
+        let merged_list = merge_service_list(values.map(|s| s.to_string()).collect());
         let ser_list_param = merged_list.join("\n");
 
-        let url = subcommand.value_of("url").unwrap().to_string();
-        let token = subcommand.value_of("jtoken").unwrap().to_string();
-        let request_url = build_request_url(&url, &token, &ser_list_param);
+        let namespace = subcommand.value_of("namespace").unwrap().to_string();
+        let request_url = build_request_url(&namespace, &ser_list_param);
         println!("触发Jenkins更新...");
         let data = make_http_request(&request_url).await.unwrap();
         println!("本次请求响应:{:?}", data);
+    }
+
+    if let Some(file_path) = subcommand.value_of("file-path") {
+        // 打开文件并读取内容
+        if let Ok(lines) = read_lines(file_path) {
+            // 将文件内容转换为字符串列表
+            let content: Vec<String> = lines
+                .filter_map(|line| line.ok())
+                .collect();
+
+            println!("本次需要处理服务{}个，正在合并服务列表... \n", content.len());
+            let merged_list = merge_service_list(content);
+            let ser_list_param = merged_list.join("\n");
+
+            let namespace = subcommand.value_of("namespace").unwrap().to_string();
+            let request_url = build_request_url(&namespace, &ser_list_param);
+            println!("触发Jenkins更新...");
+            let data = make_http_request(&request_url).await.unwrap();
+            println!("本次请求响应:{:?}", data);
+        }
     }
 }
 
@@ -57,7 +116,7 @@ fn handle_test_subcommand(matches: &clap::ArgMatches) {
     }
 }
 
-fn merge_service_list(list: Vec<&str>) -> Vec<String> {
+fn merge_service_list(list: Vec<String>) -> Vec<String> {
     let mut map: HashMap<String, String> = HashMap::new();
     let pattern = Regex::new(r"\[[^\]]*\]").unwrap();
 
@@ -80,9 +139,7 @@ fn merge_service_list(list: Vec<&str>) -> Vec<String> {
         .collect();
 
     println!("合并完毕... 相同的服务只保留时间戳最新的 \n");
-
     print_merged_list(&merged_list);
-
     merged_list
 }
 
@@ -97,15 +154,15 @@ fn remove_brackets_and_content(pattern: &Regex, input: &str) -> String {
     pattern.replace_all(input, "").into_owned()
 }
 
-fn build_request_url(base_url: &str, token: &str, ser_list_param: &str) -> String {
-    let mut request_url = "http://admin:11529c11a09a8df06bf943397a8ae5ea25@".to_string();
-    request_url.push_str(base_url);
-    request_url.push_str("buildWithParameters");
-    request_url.push_str("?token=");
-    request_url.push_str(token);
-    request_url.push_str("&ser_list=");
-    request_url.push_str(ser_list_param);
-    request_url
+fn build_request_url(namespace: &str, ser_list_param: &str) -> String {
+    let url = match namespace {
+        "fas-test" => "192.168.4.79:8083/view/Fas发布/job/fas-test-build/",
+        _ => panic!("暂不支持命名空间:{}", namespace),
+    };
+
+    // url是match之后的结果
+    let template = format!("http://admin:11529c11a09a8df06bf943397a8ae5ea25@{}buildWithParameters?token=beerctl&ser_list={}", url, ser_list_param);
+    template
 }
 
 async fn make_http_request(url: &str) -> Result<String, Box<dyn Error>> {
