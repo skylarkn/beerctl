@@ -28,13 +28,19 @@ jobs:
         run: rustup target add x86_64-unknown-linux-musl
       
       - name: openssl-init
-        run: sudo apt-get install libssl-dev
+        run: sudo apt-get install libssl-dev pkg-config
       
-      - name: Set OpenSSL directory
-        run: export OPENSSL_DIR=/usr/include/openssl
+      - name: config openssl
+        run: export OPENSSL_DIR=/usr/local/opt/openssl
       
-      - name: Install pkg-config
-        run: sudo apt install pkg-config
+      - name: config pkg-config
+        run: export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+        
+      - name: check openssl
+        run:  ls /usr/local/opt/openssl/
+
+      - name: check pkg-config
+        run:  ls /usr/local/lib/pkgconfig/
 
       - name: cross-build
         run: cargo build --release --target x86_64-unknown-linux-musl
