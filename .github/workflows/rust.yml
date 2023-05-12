@@ -33,6 +33,9 @@ jobs:
       - name: Set OpenSSL directory
         run: export OPENSSL_DIR=/usr/include/openssl
       
+      - name: Install pkg-config for musl
+        run: sudo apt-get install -y pkg-config-musl
+
       - name: cross-build
         run: cargo build --release --target x86_64-unknown-linux-musl
       
