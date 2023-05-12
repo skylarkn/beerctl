@@ -21,6 +21,9 @@ jobs:
         with:
           rust-version: stable
 
+      - name: show rustc version
+        run: rustc --version
+      
       - name: rustup target add
         run: rustup target add x86_64-unknown-linux-musl
       
