@@ -24,8 +24,10 @@ jobs:
       - name: show rustc version
         run: rustc --version
       
+#       - name: rustup target add
+#         run: rustup target add x86_64-unknown-linux-musl
       - name: rustup target add
-        run: rustup target add x86_64-unknown-linux-musl
+        run: rustup target add x86_64-unknown-linux-gnu
       
       - name: openssl-init
         run: sudo apt-get install libssl-dev pkg-config musl-tools
@@ -43,7 +45,7 @@ jobs:
 #         run:  ls /usr/local/lib/pkgconfig/
 
       - name: cross-build
-        run: cargo build --release --target x86_64-unknown-linux-musl
+        run: cargo build --release --target x86_64-unknown-linux-gnu
       
       - name: show target
         run: ls target
@@ -53,5 +55,5 @@ jobs:
         with:
           name: release-dir
           path: |
-            target/x86_64-unknown-linux-musl
+            target/x86_64-unknown-linux-gnu
       
