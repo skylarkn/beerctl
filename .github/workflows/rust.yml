@@ -45,10 +45,13 @@ jobs:
       - name: cross-build
         run: cargo build --release --target x86_64-unknown-linux-musl
       
-      - name: Archive production artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: release-dir
-          path: |
-            target/release
+      - name: show target
+        run: ls target
+      
+#       - name: Archive production artifacts
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: release-dir
+#           path: |
+#             target/release
       
