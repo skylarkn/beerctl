@@ -83,8 +83,7 @@ async fn handle_deploy_subcommand(subcommand: &clap::ArgMatches<'_>) {
         let namespace = subcommand.value_of("namespace").unwrap().to_string();
         let request_url = build_request_url(&namespace, &ser_list_param);
         println!("触发Jenkins更新...");
-        let data = make_http_request(&request_url).await.unwrap();
-        println!("本次请求响应:{:?}", data);
+        make_http_request(&request_url).await.unwrap();
     }
 
     if let Some(file_path) = subcommand.value_of("file-path") {
@@ -102,8 +101,7 @@ async fn handle_deploy_subcommand(subcommand: &clap::ArgMatches<'_>) {
             let namespace = subcommand.value_of("namespace").unwrap().to_string();
             let request_url = build_request_url(&namespace, &ser_list_param);
             println!("触发Jenkins更新...");
-            let data = make_http_request(&request_url).await.unwrap();
-            println!("本次请求响应:{:?}", data);
+            make_http_request(&request_url).await.unwrap();
         }
     }
 }
@@ -173,8 +171,18 @@ async fn make_http_request(url: &str) -> Result<String, Box<dyn Error>> {
     let res = client
         .get(url)
         .send()
-        .await?
-        .text()
         .await?;
+
+    let status_code = res.status();
+    let headers = res.headers();
+
+    // 打印HTTP状态码
+    println!("HTTP Status Code: {}", status_code);
+
+    // 打印特定的响应头，例如"Content-Type"
+    if let Some(location) = headers.get("Location") {
+        println!("查看Jenkins任务执行详情: {}", "http://192.168.4.79:8083/view/Fas%E5%8F%91%E5%B8%83/job/fas-test-build/");
+    }
+    let res = res.text().await?;
     Ok(res)
 }
