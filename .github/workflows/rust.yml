@@ -33,11 +33,8 @@ jobs:
       - name: Set OpenSSL directory
         run: export OPENSSL_DIR=/usr/include/openssl
       
-      - name: Install pkg-config for musl
-        run: sudo apt-get install -y pkg-config-musl
-        
-      - name: Set PKG_CONFIG environment variable
-        run: export PKG_CONFIG=/usr/bin/pkg-config-musl
+      - name: Install pkg-config
+        run: sudo apt install pkg-config
 
       - name: cross-build
         run: cargo build --release --target x86_64-unknown-linux-musl
